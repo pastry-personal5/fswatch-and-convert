@@ -1,0 +1,18 @@
+[project]
+name = "fswatch-and-convert"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "isort>=7.0.0",
+    "loguru>=0.7.3",
+    "typer>=0.20.0",
+    "watchdog>=6.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "black>=25.11.0",
+    "isort>=7.0.0",
+]
