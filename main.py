@@ -24,7 +24,7 @@ class VideoConverter:
     def __init__(self, global_config: GlobalConfig):
         self.global_config = global_config
 
-    def convert(self, filepath_for_source_video: str):
+    def convert(self, filepath_for_source_video: str, ext_of_video: str):
         source_path = Path(filepath_for_source_video)
         logger.info(f"convert request {source_path}")
 
@@ -36,7 +36,7 @@ class VideoConverter:
             logger.warning(f"skip convert; file did not stabilize: {source_path}")
             return
 
-        (filepath_for_video, filepath_for_image) = self._get_paths(source_path)
+        (filepath_for_video, filepath_for_image) = self._get_paths(source_path, ext_of_video)
         try:
             self._move_video_to_work_on(str(source_path), filepath_for_video)
             self._convert_video_to_image(filepath_for_video, filepath_for_image)
@@ -53,11 +53,11 @@ class VideoConverter:
             time.sleep(delay_seconds)
         return False
 
-    def _get_paths(self, filepath_for_source_video: Path) -> (str, str):
+    def _get_paths(self, filepath_for_source_video: Path, ext_of_video: str) -> (str, str):
         path_to_work_on = self.global_config.path_to_work_on
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         base = re.sub(r"[^A-Za-z0-9_-]", "-", filepath_for_source_video.stem) or "video"
-        filename_for_video = f"{base}-{timestamp}-{filepath_for_source_video.stat().st_mtime_ns}.mp4"
+        filename_for_video = f"{base}-{timestamp}-{filepath_for_source_video.stat().st_mtime_ns}.{ext_of_video}"
         filename_for_image = f"{base}-{timestamp}-{filepath_for_source_video.stat().st_mtime_ns}-last-frame.png"
 
         filepath_for_video = os.path.join(path_to_work_on,  filename_for_video)
@@ -71,7 +71,7 @@ class VideoConverter:
     def _convert_video_to_image(self, filepath_for_video: str, filepath_for_image: str):
         self._run_command([
             "ffmpeg",
-            "-sseof", "-0.1",
+            "-sseof", "-1",
             "-i", filepath_for_video,
             "-update", "1",
             "-q:v", "1",
@@ -84,8 +84,17 @@ class VideoConverter:
 
 
 class CustomFileSystemEventHandler(FileSystemEventHandler):
-    def __init__(self, pattern_to_watch: str, video_converter: VideoConverter):
+    def __init__(self, pattern_to_watch: str, ext_of_video: str, video_converter: VideoConverter):
+        """
+        Initialize the event handler.
+
+        Args:
+            pattern_to_watch (str): The pattern to watch for file changes.
+            ext_of_video (str): The extension of the video files to convert.
+            video_converter (VideoConverter): The video converter instance.
+        """
         self.pattern_to_watch = pattern_to_watch
+        self.ext_of_video = ext_of_video
         self.video_converter = video_converter
 
     def on_created(self, event):
@@ -98,18 +107,18 @@ class CustomFileSystemEventHandler(FileSystemEventHandler):
         match_result = re.match(self.pattern_to_watch, event.src_path)
         if match_result:
             try:
-                self.video_converter.convert(event.src_path)
+                self.video_converter.convert(event.src_path, self.ext_of_video)
             except Exception:
                 logger.exception(f"conversion crashed for {event.src_path}")
 
 
 @app.command()
-def watch(path_to_watch: str, path_to_work_on: str, pattern_to_watch: str):
+def watch(path_to_work_on: str, path_to_watch: str, pattern_to_watch: str, ext_of_video: str):
     global_config = GlobalConfig(path_to_work_on)
 
     video_converter = VideoConverter(global_config)
     path = path_to_watch
-    event_handler = CustomFileSystemEventHandler(pattern_to_watch, video_converter)
+    event_handler = CustomFileSystemEventHandler(pattern_to_watch, ext_of_video, video_converter)
     observer = Observer()
     observer.schedule(event_handler, path, recursive=True)
     observer.start()
