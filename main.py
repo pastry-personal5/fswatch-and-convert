@@ -5,6 +5,7 @@ import subprocess
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import Tuple
 
 import typer
 from loguru import logger
@@ -53,7 +54,7 @@ class VideoConverter:
             time.sleep(delay_seconds)
         return False
 
-    def _get_paths(self, filepath_for_source_video: Path, ext_of_video: str) -> (str, str):
+    def _get_paths(self, filepath_for_source_video: Path, ext_of_video: str) -> Tuple[str, str]:
         path_to_work_on = self.global_config.path_to_work_on
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         base = re.sub(r"[^A-Za-z0-9_-]", "-", filepath_for_source_video.stem) or "video"
