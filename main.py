@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import time
 from datetime import datetime
+from loguru import logger
 from pathlib import Path
 from typing import Tuple
 
@@ -57,7 +58,12 @@ class VideoConverter:
     def _get_paths(self, filepath_for_source_video: Path, ext_of_video: str) -> Tuple[str, str]:
         path_to_work_on = self.global_config.path_to_work_on
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        base = re.sub(r"[^A-Za-z0-9_-]", "-", filepath_for_source_video.stem) or "video"
+        FLAG_PRESERVE_BASE = False
+        if FLAG_PRESERVE_BASE:
+            # Replace any character that is not a letter, number, underscore, or hyphen with a hyphen
+            base = re.sub(r"[^A-Za-z0-9_-]", "-", filepath_for_source_video.stem) or "video"
+        else:
+            base = "video"
         filename_for_video = f"{base}-{timestamp}-{filepath_for_source_video.stat().st_mtime_ns}.{ext_of_video}"
         filename_for_image = f"{base}-{timestamp}-{filepath_for_source_video.stat().st_mtime_ns}-last-frame.png"
 
@@ -115,6 +121,7 @@ class CustomFileSystemEventHandler(FileSystemEventHandler):
 
 @app.command()
 def watch(path_to_work_on: str, path_to_watch: str, pattern_to_watch: str, ext_of_video: str):
+    logger.info(f"watching {path_to_watch} for pattern {pattern_to_watch}. Ext is {ext_of_video}. Files stored in {path_to_work_on}")
     global_config = GlobalConfig(path_to_work_on)
 
     video_converter = VideoConverter(global_config)
