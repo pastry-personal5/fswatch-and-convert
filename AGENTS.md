@@ -1,7 +1,9 @@
 # fswatch-and-convert — Agent Instructions
 
 ## Project Overview
-Python CLI that watches a directory for new video files and converts them to still images via ffmpeg. Built with typer, watchdog, loguru.
+Python CLI that watches a directory for new video files and converts them to still images via ffmpeg. 
+Also, it is planned that once a still image is generated, this app lets Draw Things app continue to work.
+Built with typer, watchdog, loguru.
 
 ## Environment
 - Python >= 3.13, managed with `uv`
